@@ -12,4 +12,4 @@
 - https://tour.golang.org/methods/25 exercise-images.go
 ### Concurrency
 - https://tour.golang.org/concurrency/8 exercise-equivalent-binary-trees.go
-- https://tour.golang.org/concurrency/10 exercise-web-crawler.go (edited)
+- https://tour.golang.org/concurrency/10 exercise-web-crawler.go
