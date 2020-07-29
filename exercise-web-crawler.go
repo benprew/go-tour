@@ -16,18 +16,14 @@ type UrlList struct {
 	mux  sync.Mutex
 }
 
-var urlList UrlList
-
-func notify(c chan int) {
-	c <- 1
-}
+var seenUrls UrlList
 
 func seen(url string) bool {
-	urlList.mux.Lock()
-	defer urlList.mux.Unlock()
+	seenUrls.mux.Lock()
+	defer seenUrls.mux.Unlock()
 
-	if !urlList.urls[url] {
-		urlList.urls[url] = true
+	if !seenUrls.urls[url] {
+		seenUrls.urls[url] = true
 		return false
 	} else {
 		return true
@@ -36,15 +32,16 @@ func seen(url string) bool {
 
 // Crawl uses fetcher to recursively crawl
 // pages starting with url, to a maximum of depth.
-func Crawl(url string, depth int, fetcher Fetcher, results chan int) {
+func Crawl(url string, depth int, fetcher Fetcher, wg *sync.WaitGroup) {
 	// Fetch URLs in parallel.
-	//     Fetch URLs in parallel by using go routines and a channel to monitor
+	//     Fetch URLs in parallel by using go routines and a WaitGroup to monitor
 	//     when the sub-crawls are done.
 	// Don't fetch the same URL twice.
 	//     Uses a map to keep from fetching the same url more than once and uses a
 	//     mutex to synchronize access to the map
 
-	defer notify(results) // add a message to results to let caller know we're done.
+	defer wg.Done()
+
 	if depth <= 0 {
 		return
 	}
@@ -59,24 +56,22 @@ func Crawl(url string, depth int, fetcher Fetcher, results chan int) {
 	}
 
 	fmt.Printf("found: %s %q\n", url, body)
-	c := make(chan int, len(urls))
 	for _, u := range urls {
-		go Crawl(u, depth-1, fetcher, c)
-	}
-	// wait for all sub-crawls to finish
-	for i := 0; i < len(urls); i++ {
-		fmt.Printf("read %d, len: %d url: %s\n", i, len(urls), url)
-		<-c
+		wg.Add(1)
+		go Crawl(u, depth-1, fetcher, wg)
 	}
 }
 
 func main() {
-	results := make(chan int, 1)
-	urlList.urls = make(map[string]bool)
-	Crawl("https://golang.org/", 4, fetcher, results)
-	<-results // read 1 result from the first crawl
+	var wg sync.WaitGroup
+	seenUrls.urls = make(map[string]bool)
+
+	wg.Add(1)
+	Crawl("https://golang.org/", 4, fetcher, &wg)
+	wg.Wait()
+
 	fmt.Println("### Results ###")
-	for n := range urlList.urls {
+	for n := range seenUrls.urls {
 		fmt.Println(n)
 	}
 }
