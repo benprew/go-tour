@@ -30,8 +30,7 @@ func Same(t1, t2 *tree.Tree) bool {
 	go Walk(t2, ch2)
 
 	for i := range ch1 {
-		j := <-ch2
-		if i != j {
+		if i != <-ch2 {
 			return false
 		}
 	}
@@ -39,9 +38,6 @@ func Same(t1, t2 *tree.Tree) bool {
 }
 
 func main() {
-	t1 := tree.New(1)
-	t2 := tree.New(2)
-
-	fmt.Printf("%v\n%v\n", t1, t2)
-	fmt.Println(Same(t1, t2))
+	fmt.Println(Same(tree.New(3), tree.New(2)) == false)
+	fmt.Println(Same(tree.New(4), tree.New(4)) == true)
 }
