@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -17,15 +16,18 @@ func (r *rot13Reader) Read(out []byte) (int, error) {
 		return l, err
 	}
 	for i, n := range out {
-		if n >= 'A' && n <= 'z' {
-			fmt.Printf("%d %d", n, 'A')
-			out[i] = (n+13)%26 + (n - 'A')
-		} else {
-			out[i] = n
+		out[i] = n
+		if n >= 'A' && n <= 'Z' {
+			out[i] = rot13(n, 'A')
+		} else if n >= 'a' && n < 'z' {
+			out[i] = rot13(n, 'a')
 		}
-
 	}
 	return l, nil
+}
+
+func rot13(val byte, offset byte) byte {
+	return ((val+13)-offset)%26 + offset
 }
 
 func main() {
